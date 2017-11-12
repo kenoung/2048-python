@@ -1,20 +1,4 @@
-#
-# CS1010FC --- Programming Methodology
-#
-# Mission N Solutions
-#
-# Note that written answers are commented out to allow us to run your
-# code easily while grading your problem set.
 from random import *
-
-#######
-#Task 1a#
-#######
-
-# [Marking Scheme]
-# Points to note:
-# Matrix elements must be equal but not identical
-# 1 mark for creating the correct matrix
 
 def new_game(n):
     matrix = []
@@ -23,14 +7,6 @@ def new_game(n):
         matrix.append([0] * n)
     return matrix
 
-###########
-# Task 1b #
-###########
-
-# [Marking Scheme]
-# Points to note:
-# Must ensure that it is created on a zero entry
-# 1 mark for creating the correct loop
 
 def add_two(mat):
     a=randint(0,len(mat)-1)
