@@ -1,6 +1,5 @@
 from tkinter import *
-from logic import *
-from random import *
+from grid import Grid
 
 SIZE = 500
 GRID_LEN = 4
@@ -35,11 +34,13 @@ class GameGrid(Frame):
         self.master.bind("<Key>", self.key_down)
 
         #self.gamelogic = gamelogic
-        self.commands = {   KEY_UP: up, KEY_DOWN: down, KEY_LEFT: left, KEY_RIGHT: right,
-                            KEY_UP_ALT: up, KEY_DOWN_ALT: down, KEY_LEFT_ALT: left, KEY_RIGHT_ALT: right }
+        self.commands = {   KEY_UP: 'UP', KEY_DOWN: 'DOWN', KEY_LEFT: 'LEFT', KEY_RIGHT: 'RIGHT',
+                            KEY_UP_ALT: 'UP', KEY_DOWN_ALT: 'DOWN', KEY_LEFT_ALT: 'LEFT', KEY_RIGHT_ALT: 'RIGHT' }
 
         self.grid_cells = []
         self.init_grid()
+
+        self.matrix = Grid(GRID_LEN)
         self.init_matrix()
         self.update_grid_cells()
         
@@ -60,45 +61,35 @@ class GameGrid(Frame):
 
             self.grid_cells.append(grid_row)
 
-    def gen(self):
-        return randint(0, GRID_LEN - 1)
-
     def init_matrix(self):
-        self.matrix = new_game(4)
-
-        self.matrix=add_two(self.matrix)
-        self.matrix=add_two(self.matrix)
+        self.matrix.add()
+        self.matrix.add()
 
     def update_grid_cells(self):
         for i in range(GRID_LEN):
             for j in range(GRID_LEN):
-                new_number = self.matrix[i][j]
+                new_number = self.matrix.get_ele(i, j)
                 if new_number == 0:
                     self.grid_cells[i][j].configure(text="", bg=BACKGROUND_COLOR_CELL_EMPTY)
                 else:
-                    self.grid_cells[i][j].configure(text=str(new_number), bg=BACKGROUND_COLOR_DICT[new_number], fg=CELL_COLOR_DICT[new_number])
+                    self.grid_cells[i][j].configure(text=str(int(new_number)), bg=BACKGROUND_COLOR_DICT[new_number], fg=CELL_COLOR_DICT[new_number])
         self.update_idletasks()
         
     def key_down(self, event):
         key = repr(event.char)
         if key in self.commands:
-            self.matrix,done = self.commands[repr(event.char)](self.matrix)
-            if done:
-                self.matrix = add_two(self.matrix)
+            played_move = self.commands[repr(event.char)]
+            if played_move in self.matrix.get_available_moves():
+                self.matrix.play(played_move)
+                self.matrix.add()
                 self.update_grid_cells()
-                done=False
-                if game_state(self.matrix)=='win':
+
+                if self.matrix.is_win():
                     self.grid_cells[1][1].configure(text="You",bg=BACKGROUND_COLOR_CELL_EMPTY)
                     self.grid_cells[1][2].configure(text="Win!",bg=BACKGROUND_COLOR_CELL_EMPTY)
-                if game_state(self.matrix)=='lose':
+                elif self.matrix.is_game_over():
                     self.grid_cells[1][1].configure(text="You",bg=BACKGROUND_COLOR_CELL_EMPTY)
                     self.grid_cells[1][2].configure(text="Lose!",bg=BACKGROUND_COLOR_CELL_EMPTY)
 
-
-    def generate_next(self):
-        index = (self.gen(), self.gen())
-        while self.matrix[index[0]][index[1]] != 0:
-            index = (self.gen(), self.gen())
-        self.matrix[index[0]][index[1]] = 2
-
-gamegrid = GameGrid()
+if __name__ == '__main__':
+    gamegrid = GameGrid()

@@ -1,13 +1,14 @@
 
 import numpy as np
 
+WINNING_NUMBER = 2048
+
 class Grid(object):
     def __init__(self, N):
         """Initialize an N*N grid"""
         self.score = 0
         self.N = N
         self.mat = np.zeros((N,N))
-        self.add()
 
         self.moves = {
             'UP': self.up,
@@ -33,8 +34,15 @@ class Grid(object):
 
         return available_moves
 
-    def game_over(self):
+    def is_game_over(self):
         return len(self.get_available_moves()) == 0
+
+    def is_win(self):
+        return WINNING_NUMBER in self.mat
+
+    def get_ele(self, i, j):
+        return self.mat[i, j]
+
 
     #########
     # Moves #
@@ -50,7 +58,7 @@ class Grid(object):
 
     def down(self, mat):
         rev_mat = np.flipud(mat)
-        shifted_mat = self.up(mat)
+        shifted_mat = self.up(rev_mat)
         return np.flipud(shifted_mat)
 
     def left(self, mat):
@@ -58,7 +66,7 @@ class Grid(object):
 
     def right(self, mat):
         rev_mat = np.fliplr(mat)
-        shifted_mat = self.left(mat)
+        shifted_mat = self.left(rev_mat)
         return np.fliplr(shifted_mat)
 
     def _left(self, arr):
@@ -73,7 +81,7 @@ class Grid(object):
                 new_arr.append(arr[idx-1]*2)
                 idx += 2
             else:
-                new_arr.extend([arr[idx-1], arr[idx]])
+                new_arr.append(arr[idx - 1])
                 idx += 1
         new_arr.extend([0] * (self.N - len(new_arr)))
         return new_arr
@@ -83,7 +91,6 @@ class Grid(object):
 
     def _rotate_right(self, mat):
         return mat[::-1].T
-
 
 
 
