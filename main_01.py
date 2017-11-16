@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ## todo: Code largely copied from https://github.com/keon/deep-q-learning
-
+import os.path
 import random
 import numpy as np
 from collections import deque
@@ -11,6 +11,8 @@ from keras.optimizers import Adam
 from grid_wrapper import GridWrapper
 
 EPISODES = 1000
+SAVE_DIR = "./save/"
+DNN_FILE = SAVE_DIR + "2048-dqn.h5"
 
 
 class DQNAgent:
@@ -69,7 +71,8 @@ if __name__ == "__main__":
     state_size = env.state_size #env.observation_space.shape[0]
     action_size = env.action_size #env.action_space.n
     agent = DQNAgent(state_size, action_size)
-    # agent.load("./save/2048-dqn.h5")
+    if os.path.isfile(DNN_FILE):
+        agent.load(DNN_FILE)
     done = False
     batch_size = 32
 
@@ -90,5 +93,10 @@ if __name__ == "__main__":
                 break
         if len(agent.memory) > batch_size:
             agent.replay(batch_size)
-        # if e % 10 == 0:
-        #     agent.save("./save/2048-dqn.h5")
+        if e % 10 == 0:
+            if not os.path.exists(SAVE_DIR):
+                os.makedirs(SAVE_DIR)
+            if not os.path.exists(DNN_FILE):
+                f = open(DNN_FILE, 'x')
+                f.close()
+            agent.save(DNN_FILE)
