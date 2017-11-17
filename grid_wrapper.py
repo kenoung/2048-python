@@ -1,8 +1,6 @@
 from grid import Grid
 import numpy as np
 
-INVALID_MOVE_SCORE = -100
-
 class GridWrapper(Grid):
     def __init__(self, N):
         Grid.__init__(self, N)
@@ -31,8 +29,10 @@ class GridWrapper(Grid):
         return self.curr_state()
 
     def step(self, action_num):
+        # Should not happen
         if action_num not in self.get_available_moves():
-            return self.curr_state(), INVALID_MOVE_SCORE, False, None
+            return self.curr_state(), 0, False, None
+
         self.mat = self.actions[action_num](self.mat)
         self.add()
         return self.curr_state(), self.curr_score(), self.is_game_over(), None

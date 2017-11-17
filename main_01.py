@@ -40,10 +40,13 @@ class DQNAgent:
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
-    def act(self, state):
+    def act(self, state, illegal_moves):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
         act_values = self.model.predict(state)
+        for move in illegal_moves:
+            act_values[0][move] = np.NINF
+
         return np.argmax(act_values[0])  # returns action
 
     def replay(self, batch_size):
@@ -81,7 +84,7 @@ if __name__ == "__main__":
         state = np.reshape(state, [1, state_size])
         for time in range(10000): #todo this is max num of moves
             # env.show()
-            action = agent.act(state)
+            action = agent.act(state, env.get_available_moves())
             next_state, reward, done, _ = env.step(action)
             reward = reward if not done else -10
             next_state = np.reshape(next_state, [1, state_size])
