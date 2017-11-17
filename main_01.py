@@ -12,7 +12,7 @@ import logging
 
 from grid_wrapper import GridWrapper
 
-EPISODES = 1000
+EPISODES = 100000
 SAVE_DIR = "./save/"
 DNN_FILE = SAVE_DIR + "2048-dqn.h5"
 
@@ -24,7 +24,7 @@ class DQNAgent:
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.999995
+        self.epsilon_decay = 0.99995
         self.learning_rate = 0.001
         self.model = self._build_model()
 
