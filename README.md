@@ -20,3 +20,13 @@ Code base largely from [Deep Q Learning with Kera](https://github.com/keon/deep-
 ### Run
 
 `python3 main_01.py`
+
+### Parameters to adjust
+
+* Learning Constants
+* Batch Size, Memory Size, Max Num Moves
+* Underlying NN parameters
+
+### Things to experiment
+
+* Learning from a certain point in the game
