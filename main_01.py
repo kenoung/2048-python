@@ -99,12 +99,17 @@ if __name__ == "__main__":
     if os.path.isfile(DNN_FILE):
         agent.load(DNN_FILE)
     done = False
+    max_num_moves = 10000
     batch_size = 200
+    logger.info("gamma = {}, epsilon = {}, epsilon_min = {}, epsilon_decay = {}, learning_rate = {}"
+                .format(agent.gamma, agent.epsilon, agent.epsilon_min, agent.epsilon_decay, agent.learning_rate))
+    logger.info("batch_size = {}, memory_size = {}, max_num_moves = {}"
+                .format(batch_size, agent.memory.maxlen, max_num_moves))
 
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        max_num_moves = 10000
+        score = 0
         for time in range(max_num_moves):
             # env.show()
             start = tm.time()
