@@ -3,10 +3,12 @@
 import os.path
 import random
 import numpy as np
+import sys
 from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+import logging
 
 from grid_wrapper import GridWrapper
 
@@ -70,6 +72,19 @@ class DQNAgent:
 
 
 if __name__ == "__main__":
+    # LOG
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    logger = logging.getLogger('2048-dqn')
+    if not os.path.exists(SAVE_DIR):
+        os.makedirs(SAVE_DIR)
+    hdlr = logging.FileHandler(SAVE_DIR + '2048-dqn.log')
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    hdlr.setFormatter(formatter)
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.INFO)
+    logger.info("\n\n Starting training...")
+
+    # Initialize
     env = GridWrapper(4) #gym.make('CartPole-v1')
     state_size = env.state_size #env.observation_space.shape[0]
     action_size = env.action_size #env.action_space.n
@@ -91,8 +106,8 @@ if __name__ == "__main__":
             agent.remember(state, action, reward, next_state, done)
             state = next_state
             if done:
-                print("episode: {}/{}, score: {}, e: {:.2}, maxtile: {}"
-                      .format(e, EPISODES, time, agent.epsilon, env.curr_score()))
+                logger.info("episode: {}/{}, score: {}, e: {:.2}, maxtile: {}"
+                            .format(e, EPISODES, time, agent.epsilon, env.curr_score()))
                 break
         if len(agent.memory) > batch_size:
             agent.replay(batch_size)
