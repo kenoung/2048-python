@@ -20,7 +20,7 @@ class DQNAgent:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
         self.action_size = action_size
-        self.memory = deque(maxlen=20000)
+        self.memory = deque(maxlen=3000)
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
@@ -91,12 +91,13 @@ if __name__ == "__main__":
     if os.path.isfile(DNN_FILE):
         agent.load(DNN_FILE)
     done = False
-    batch_size = 1000
+    batch_size = 200
 
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        for time in range(10000): #todo this is max num of moves
+        max_num_moves = 10000
+        for time in range(max_num_moves):
             # env.show()
             action = agent.act(state, env.get_available_moves())
             next_state, reward, done, _ = env.step(action)
