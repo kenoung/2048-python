@@ -4,6 +4,7 @@ import os.path
 import random
 import numpy as np
 import sys
+import time as tm
 from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
@@ -51,6 +52,7 @@ class DQNAgent:
         return np.argmax(act_values[0])  # returns action
 
     def replay(self, batch_size):
+        time_diff = 0
         minibatch = random.sample(self.memory, batch_size)
         for state, action, reward, next_state, done in minibatch:
             target = reward
@@ -59,9 +61,13 @@ class DQNAgent:
                           np.amax(self.model.predict(next_state)[0]))
             target_f = self.model.predict(state)
             target_f[0][action] = target
+            start = tm.time()
             self.model.fit(state, target_f, epochs=1, verbose=0)
+            end = tm.time()
+            time_diff = end - start
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+        return time_diff
 
     def load(self, name):
         self.model.load_weights(name)
@@ -82,6 +88,8 @@ if __name__ == "__main__":
     logger.addHandler(hdlr)
     logger.setLevel(logging.INFO)
     logger.info("\n\n Starting training...")
+    training_time = 0.0
+    simulation_time = 0.0
 
     # Initialize
     env = GridWrapper(4) #gym.make('CartPole-v1')
@@ -99,18 +107,22 @@ if __name__ == "__main__":
         max_num_moves = 10000
         for time in range(max_num_moves):
             # env.show()
+            start = tm.time()
             action = agent.act(state, env.get_available_moves())
+            end = tm.time()
+            simulation_time += end - start
             next_state, reward, done, _ = env.step(action)
             reward = reward if not done else -10
             next_state = np.reshape(next_state, [1, state_size])
             agent.remember(state, action, reward, next_state, done)
             state = next_state
             if done:
-                logger.info("episode: {}/{}, score: {}, e: {:.2}, maxtile: {}"
-                            .format(e, EPISODES, time, agent.epsilon, env.curr_score()))
+                score = time
                 break
         if len(agent.memory) > batch_size:
-            agent.replay(batch_size)
+            training_time += agent.replay(batch_size)
+        logger.info("episode: {}/{}, score: {}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}"
+                    .format(e, EPISODES, score, agent.epsilon, env.curr_score(), simulation_time, training_time))
         if e % 10 == 0:
             if not os.path.exists(SAVE_DIR):
                 os.makedirs(SAVE_DIR)
