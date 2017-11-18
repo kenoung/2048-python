@@ -5,16 +5,7 @@ class GridWrapper(Grid):
     def __init__(self, N):
         Grid.__init__(self, N)
         self.state_size = N * N
-        self.actions = [self.up, self.down, self.left, self.right]
-        self.action_size = len(self.actions)
-
-    def get_available_moves(self):
-        available_moves = []
-
-        for i in range(self.action_size):
-            if not np.array_equal(self.actions[i](self.mat), self.mat):
-                available_moves.append(i)
-        return available_moves
+        self.action_size = len(self.moves)
 
     def curr_score(self):
         return self.mat.max()
@@ -29,10 +20,8 @@ class GridWrapper(Grid):
         return self.curr_state()
 
     def step(self, action_num):
-        # Should not happen
-        if action_num not in self.get_available_moves():
-            return self.curr_state(), 0, False, None
+        assert action_num in self.get_available_moves()
 
-        self.mat = self.actions[action_num](self.mat)
+        self.play(action_num)
         self.add()
         return self.curr_state(), self.curr_score(), self.is_game_over(), None

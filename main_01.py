@@ -13,7 +13,7 @@ import logging
 
 from grid_wrapper import GridWrapper
 
-EPISODES = 100000
+EPISODES = 10000
 SAVE_DIR = "./save/"
 DNN_FILE = SAVE_DIR + "2048-dqn.h5"
 
@@ -42,12 +42,14 @@ class DQNAgent:
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
-    def act(self, state, illegal_moves):
+    def act(self, state, legal_moves):
         if np.random.rand() <= self.epsilon:
-            return random.randrange(self.action_size)
+            return random.choice(legal_moves)
+
         act_values = self.model.predict(state)
-        for move in illegal_moves:
-            act_values[0][move] = np.NINF
+        for move in range(action_size):
+            if move not in legal_moves:
+                act_values[0][move] = np.NINF
 
         return np.argmax(act_values[0])  # returns action
 
@@ -55,16 +57,16 @@ class DQNAgent:
         time_diff = 0
         minibatch = random.sample(self.memory, batch_size)
         for state, action, reward, next_state, done in minibatch:
+            start = tm.time()
             target = reward
             if not done:
                 target = (reward + self.gamma *
                           np.amax(self.model.predict(next_state)[0]))
             target_f = self.model.predict(state)
             target_f[0][action] = target
-            start = tm.time()
             self.model.fit(state, target_f, epochs=1, verbose=0)
             end = tm.time()
-            time_diff = end - start
+            time_diff += end - start
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
         return time_diff
@@ -88,8 +90,6 @@ if __name__ == "__main__":
     logger.addHandler(hdlr)
     logger.setLevel(logging.INFO)
     logger.info("\n\n Starting training...")
-    training_time = 0.0
-    simulation_time = 0.0
 
     # Initialize
     env = GridWrapper(4) #gym.make('CartPole-v1')
@@ -106,28 +106,32 @@ if __name__ == "__main__":
     logger.info("batch_size = {}, memory_size = {}, max_num_moves = {}"
                 .format(batch_size, agent.memory.maxlen, max_num_moves))
 
+    overall_start_time = tm.time()
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
         score = 0
+        episode_time_start = tm.time()
         for time in range(max_num_moves):
             # env.show()
-            start = tm.time()
             action = agent.act(state, env.get_available_moves())
-            end = tm.time()
-            simulation_time += end - start
             next_state, reward, done, _ = env.step(action)
+
             reward = reward if not done else -10
             next_state = np.reshape(next_state, [1, state_size])
             agent.remember(state, action, reward, next_state, done)
             state = next_state
+
             if done:
                 score = time
                 break
+
+        simulation_time = tm.time() - episode_time_start
+
+        training_time = 0.0
         if len(agent.memory) > batch_size:
-            training_time += agent.replay(batch_size)
-        logger.info("episode: {}/{}, score: {}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}"
-                    .format(e, EPISODES, score, agent.epsilon, env.curr_score(), simulation_time, training_time))
+            training_time = agent.replay(batch_size)
+
         if e % 10 == 0:
             if not os.path.exists(SAVE_DIR):
                 os.makedirs(SAVE_DIR)
@@ -135,3 +139,10 @@ if __name__ == "__main__":
                 f = open(DNN_FILE, 'x')
                 f.close()
             agent.save(DNN_FILE)
+
+        episode_time = tm.time() - episode_time_start
+        logger.info("episode: {}/{}, score: {}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}"
+                    .format(e, EPISODES, score, agent.epsilon, env.curr_score(), simulation_time, training_time, episode_time))
+
+    overall_time = tm.time() - overall_start_time
+    logger.info("total time taken: {:.3}".format(overall_time))

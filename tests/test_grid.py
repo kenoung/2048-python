@@ -47,7 +47,7 @@ def test_left(input_arr, expected_arr):
 def test_left(input_arr, expected_arr):
     grid = Grid(4)
     grid.mat = input_arr
-    grid.play('LEFT')
+    grid.play(2)
     assert np.array_equal(grid.mat, expected_arr)
 
 
@@ -57,7 +57,7 @@ def test_left(input_arr, expected_arr):
              [2,8,4,2],
              [2,8,4,2],
              [2,8,16,2]],
-            ['UP', 'DOWN']),
+            [0, 1]),
 ])
 def test_available_moves(input_mat, available_moves):
     grid = Grid(4)
