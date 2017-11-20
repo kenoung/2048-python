@@ -23,6 +23,7 @@ class GridWrapper(Grid):
 
     def reset(self):
         self.__init__(self.N)
+        self.score = 0
         self.add()
         self.add()
         return self.curr_state()
@@ -31,7 +32,7 @@ class GridWrapper(Grid):
         assert action_num in self.get_available_moves()
         diff = self.get_num_tiles()
         self.play(action_num)
-        self.add()
         diff -= self.get_num_tiles()
+        self.add()
         self.score += diff
         return self.curr_state(), diff, self.is_game_over(), None

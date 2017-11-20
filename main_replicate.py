@@ -116,7 +116,7 @@ if __name__ == "__main__":
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        score = 0
+        moves = 0
         episode_time_start = tm.time()
         for time in range(max_num_moves):
             # env.show()
@@ -129,7 +129,7 @@ if __name__ == "__main__":
             state = next_state
 
             if done:
-                score = time
+                moves = time
                 break
 
         simulation_time = tm.time() - episode_time_start
@@ -147,8 +147,8 @@ if __name__ == "__main__":
             agent.save(DNN_FILE)
 
         episode_time = tm.time() - episode_time_start
-        logger.info("episode: {}/{}, score: {}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}"
-                    .format(e, EPISODES, score, agent.epsilon, env.get_max_tile(), simulation_time, training_time, episode_time))
+        logger.info("episode: {}/{}, moves: {}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}, score: {}"
+                    .format(e, EPISODES, moves, agent.epsilon, env.get_max_tile(), simulation_time, training_time, episode_time, env.score))
 
     overall_time = tm.time() - overall_start_time
     logger.info("total time taken: {:.3}".format(overall_time))
