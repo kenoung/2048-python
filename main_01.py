@@ -13,15 +13,15 @@ import logging
 
 from grid_wrapper import GridWrapper
 
-EPISODES = 10000
+EPISODES = 1000000
 SAVE_DIR = "./save/"
-DNN_FILE = SAVE_DIR + "2048-dqn.h5"
+DNN_FILE = SAVE_DIR + "2048-dqn-2.h5"
 
 class DQNAgent:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
         self.action_size = action_size
-        self.memory = deque(maxlen=3000)
+        self.memory = deque(maxlen=100000)
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
@@ -32,8 +32,10 @@ class DQNAgent:
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
-        model.add(Dense(24, input_dim=self.state_size, activation='relu'))
-        model.add(Dense(24, activation='relu'))
+        model.add(Dense(256, input_dim=self.state_size, activation='relu'))
+        model.add(Dense(256, activation='relu'))
+        model.add(Dense(256, activation='relu'))
+        model.add(Dense(256, activation='relu'))
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse',
                       optimizer=Adam(lr=self.learning_rate))
@@ -100,7 +102,7 @@ if __name__ == "__main__":
         agent.load(DNN_FILE)
     done = False
     max_num_moves = 10000
-    batch_size = 200
+    batch_size = 10000
     logger.info("gamma = {}, epsilon = {}, epsilon_min = {}, epsilon_decay = {}, learning_rate = {}"
                 .format(agent.gamma, agent.epsilon, agent.epsilon_min, agent.epsilon_decay, agent.learning_rate))
     logger.info("batch_size = {}, memory_size = {}, max_num_moves = {}"
@@ -110,7 +112,7 @@ if __name__ == "__main__":
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        score = 0
+        moves = 0
         episode_time_start = tm.time()
         for time in range(max_num_moves):
             # env.show()
@@ -123,7 +125,7 @@ if __name__ == "__main__":
             state = next_state
 
             if done:
-                score = time
+                moves = time
                 break
 
         simulation_time = tm.time() - episode_time_start
@@ -141,8 +143,8 @@ if __name__ == "__main__":
             agent.save(DNN_FILE)
 
         episode_time = tm.time() - episode_time_start
-        logger.info("episode: {}/{}, score: {}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}"
-                    .format(e, EPISODES, score, agent.epsilon, env.curr_score(), simulation_time, training_time, episode_time))
+        logger.info("episode: {}/{}, moves: {}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}, score: {}"
+                    .format(e, EPISODES, moves, agent.epsilon, env.curr_score(), simulation_time, training_time, episode_time, env.score))
 
     overall_time = tm.time() - overall_start_time
     logger.info("total time taken: {:.3}".format(overall_time))
