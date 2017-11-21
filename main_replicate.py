@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 ## todo: Code largely adapted from https://github.com/keon/deep-q-learning
 ## todo: Parameters largely adapted from https://github.com/georgwiese/2048-rl
+import argparse
 import uuid
 
 import os.path
@@ -17,15 +18,15 @@ import logging
 from grid_wrapper_replicate import GridWrapper
 
 class DQNAgent:
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size, action_size, gamma=0.95, lr=0.01):
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=1000)
-        self.gamma = 0.95    # discount rate
+        self.gamma = gamma    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.999995
-        self.learning_rate = 0.1
+        self.learning_rate = lr
         self.model = self._build_model()
 
     def _build_model(self):
@@ -90,15 +91,49 @@ class DQNAgent:
         self.model.save_weights(name)
 
 
-if __name__ == "__main__":
+def get_parameters():
+    parser = argparse.ArgumentParser(description='Get agent parameters')
+    parser.add_argument('--gamma', type=float)
+    parser.add_argument('--learning_rate', type=float)
+    parser.add_argument('--batch_size', type=int)
 
-    EPISODES = 1000000
-    SAVE_DIR = "./save/"
-    EXPERIMENT_NAME = "2048-dqn-replicate-" + str(uuid.uuid4())
-    DNN_FILE = SAVE_DIR + EXPERIMENT_NAME + ".h5"
-    LOG_FILE = SAVE_DIR + EXPERIMENT_NAME + ".log"
+    return vars(parser.parse_args())
 
-    # LOG
+
+def evaluate(agent, logger):
+    game = GridWrapper(4)
+    max_tile = {}
+    sum_score = 0
+
+    for i in range(NO_OF_EVALUATION_GAMES):
+        state = game.reset()
+        state = np.reshape(state, [1, state_size])
+        done = False
+        moves = 0
+
+        while not done:
+            # env.show()
+            action = agent.act_policy(state, game.get_available_moves())
+            next_state, _, done, _ = game.step(action)
+            next_state = np.reshape(next_state, [1, state_size])
+            state = next_state
+            moves += 1
+
+        if game.get_max_tile() not in max_tile:
+            max_tile[game.get_max_tile()] = 1
+        else:
+            max_tile[game.get_max_tile()] += 1
+
+        sum_score += game.score
+
+        logger.info(
+            "Playing at episode: {}, game num: {}, moves: {}, maxtile: {}, score: {}"
+                .format(e, i + 1, moves, game.get_max_tile(), game.score))
+    logger.info("Performance at episode: {}, max tile distribution: {}, avg score: {}"
+                .format(e, sorted(max_tile.items(), key=lambda x: x[0]), sum_score / NO_OF_EVALUATION_GAMES))
+
+
+def init_logger():
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     logger = logging.getLogger(EXPERIMENT_NAME)
     if not os.path.exists(SAVE_DIR):
@@ -109,21 +144,42 @@ if __name__ == "__main__":
     logger.addHandler(hdlr)
     logger.setLevel(logging.INFO)
     logger.info("\n\n Starting training...")
+    return logger
+
+
+if __name__ == "__main__":
+    PARAMS = get_parameters()
+    BATCH_SIZE = PARAMS['batch_size'] or 32
+    GAMMA = PARAMS.get('gamma') or 0.95
+    LR = PARAMS.get('learning_rate') or 0.001
+
+    EPISODES = 1000000
+    SAVE_DIR = "./save/"
+    EXPERIMENT_NAME = "2048-dqn-replicate-{}-{}-{}".format(BATCH_SIZE, GAMMA, LR)
+    DNN_FILE = SAVE_DIR + EXPERIMENT_NAME + ".h5"
+    LOG_FILE = SAVE_DIR + EXPERIMENT_NAME + ".log"
+    NO_OF_EVALUATION_GAMES = 100
+    logger = init_logger()
 
     # Initialize
     env = GridWrapper(4)
     state_size = env.state_size
     action_size = env.action_size
-    agent = DQNAgent(state_size, action_size)
+    agent = DQNAgent(state_size, action_size, GAMMA, LR)
+    logger.info('DQN initialized with [memory: {}] [gamma: {}] [lr: {}]'
+                .format(agent.memory.maxlen, agent.gamma, agent.learning_rate))
     if os.path.isfile(DNN_FILE):
+        logger.info('Loading agent from file {}'.format(DNN_FILE))
         agent.load(DNN_FILE)
+    else:
+        logger.info('Training new agent from scratch')
+
     done = False
     max_num_moves = 10000
-    batch_size = 32
     logger.info("gamma = {}, epsilon = {}, epsilon_min = {}, epsilon_decay = {}, learning_rate = {}"
                 .format(agent.gamma, agent.epsilon, agent.epsilon_min, agent.epsilon_decay, agent.learning_rate))
     logger.info("batch_size = {}, memory_size = {}, max_num_moves = {}"
-                .format(batch_size, agent.memory.maxlen, max_num_moves))
+                .format(BATCH_SIZE, agent.memory.maxlen, max_num_moves))
 
     overall_start_time = tm.time()
     for e in range(EPISODES):
@@ -148,8 +204,8 @@ if __name__ == "__main__":
         simulation_time = tm.time() - episode_time_start
 
         training_time = 0.0
-        if len(agent.memory) > batch_size:
-            training_time = agent.replay(batch_size)
+        if len(agent.memory) > BATCH_SIZE:
+            training_time = agent.replay(BATCH_SIZE)
 
         if e % 10 == 0:
             if not os.path.exists(SAVE_DIR):
@@ -163,25 +219,9 @@ if __name__ == "__main__":
         logger.info("episode: {}/{}, moves: {}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}, score: {}"
                     .format(e, EPISODES, moves, agent.epsilon, env.get_max_tile(), simulation_time, training_time, episode_time, env.score))
 
-        # Play 1000 games
+        # Play 10000 games
         if e % 10000 == 0:
-            game = GridWrapper(4)
-            for i in range(1, 101):
-                state = game.reset()
-                state = np.reshape(state, [1, state_size])
-                done = False
-                moves = 0
-
-                while not done:
-                    # env.show()
-                    action = agent.act_policy(state, game.get_available_moves())
-                    next_state, _, done, _ = game.step(action)
-                    next_state = np.reshape(next_state, [1, state_size])
-                    state = next_state
-                    moves += 1
-                logger.info(
-                    "Playing at episode: {}, game num: {}, moves: {}, maxtile: {}, score: {}"
-                    .format(e, i, moves, game.get_max_tile(), game.score))
+            evaluate(agent, logger)
 
     overall_time = tm.time() - overall_start_time
     logger.info("total time taken: {:.3}".format(overall_time))
