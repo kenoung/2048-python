@@ -25,7 +25,7 @@ class DQNAgent:
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.999995
-        self.learning_rate = 0.001
+        self.learning_rate = 0.1
         self.model = self._build_model()
 
     def _build_model(self):
@@ -45,6 +45,14 @@ class DQNAgent:
         if np.random.rand() <= self.epsilon:
             return random.choice(legal_moves)
 
+        act_values = self.model.predict(state)
+        for move in range(action_size):
+            if move not in legal_moves:
+                act_values[0][move] = np.NINF
+
+        return np.argmax(act_values[0])  # returns action
+
+    def act_policy(self, state, legal_moves):
         act_values = self.model.predict(state)
         for move in range(action_size):
             if move not in legal_moves:
@@ -149,6 +157,26 @@ if __name__ == "__main__":
         episode_time = tm.time() - episode_time_start
         logger.info("episode: {}/{}, moves: {}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}, score: {}"
                     .format(e, EPISODES, moves, agent.epsilon, env.get_max_tile(), simulation_time, training_time, episode_time, env.score))
+
+        # Play 1000 games
+        if e % 10000 == 0:
+            game = GridWrapper(4)
+            for i in range(1, 101):
+                state = game.reset()
+                state = np.reshape(state, [1, state_size])
+                done = False
+                moves = 0
+
+                while not done:
+                    # env.show()
+                    action = agent.act_policy(state, game.get_available_moves())
+                    next_state, _, done, _ = game.step(action)
+                    next_state = np.reshape(next_state, [1, state_size])
+                    state = next_state
+                    moves += 1
+                logger.info(
+                    "Playing at episode: {}, game num: {}, moves: {}, maxtile: {}, score: {}"
+                    .format(e, i, moves, game.get_max_tile(), game.score))
 
     overall_time = tm.time() - overall_start_time
     logger.info("total time taken: {:.3}".format(overall_time))
