@@ -183,6 +183,9 @@ if __name__ == "__main__":
 
     overall_start_time = tm.time()
     for e in range(EPISODES):
+        if e % 10000 == 0:
+            evaluate(agent, logger)
+
         state = env.reset()
         state = np.reshape(state, [1, state_size])
         moves = 0
@@ -218,10 +221,6 @@ if __name__ == "__main__":
         episode_time = tm.time() - episode_time_start
         logger.info("episode: {}/{}, moves: {}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}, score: {}"
                     .format(e, EPISODES, moves, agent.epsilon, env.get_max_tile(), simulation_time, training_time, episode_time, env.score))
-
-        # Play 10000 games
-        if e % 10000 == 0:
-            evaluate(agent, logger)
 
     overall_time = tm.time() - overall_start_time
     logger.info("total time taken: {:.3}".format(overall_time))
