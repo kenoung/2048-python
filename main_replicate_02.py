@@ -206,5 +206,4 @@ if __name__ == "__main__":
 
 # Changes made:
 # Implement deduplicate
-# SARSA
 # Implement mean Q
