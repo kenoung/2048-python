@@ -10,7 +10,7 @@ import sys
 import time as tm
 from collections import deque
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, SimpleRNN
 from keras.optimizers import Adam
 import logging
 
@@ -25,7 +25,7 @@ class DQNAgent:
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.999995
-        self.learning_rate = 0.1
+        self.learning_rate = 0.01
         self.model = self._build_model()
 
     def deduplicate(self, experiences):
@@ -44,7 +44,7 @@ class DQNAgent:
         # Neural Net for Deep-Q learning Model
         model = Sequential()
         model.add(Dense(256, input_dim=self.state_size, activation='relu'))
-        model.add(Dense(256, activation='relu'))
+        model.add(SimpleRNN(256, activation='relu'))
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse',
                       optimizer=Adam(lr=self.learning_rate))
@@ -207,3 +207,4 @@ if __name__ == "__main__":
 # Changes made:
 # Implement deduplicate
 # Implement mean Q
+# Implement RNN
