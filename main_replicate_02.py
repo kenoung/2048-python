@@ -10,7 +10,7 @@ import sys
 import time as tm
 from collections import deque
 from keras.models import Sequential
-from keras.layers import Dense, SimpleRNN
+from keras.layers import Dense, SimpleRNN, Reshape
 from keras.optimizers import Adam
 import logging
 
@@ -44,6 +44,7 @@ class DQNAgent:
         # Neural Net for Deep-Q learning Model
         model = Sequential()
         model.add(Dense(256, input_dim=self.state_size, activation='relu'))
+        model.add(Reshape((1, 256)))
         model.add(SimpleRNN(256, activation='relu'))
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse',
