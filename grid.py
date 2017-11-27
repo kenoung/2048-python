@@ -14,9 +14,10 @@ RIGHT = 3
 class Grid(object):
     def __init__(self, N):
         """Initialize an N*N grid"""
-        self.score = 0
         self.N = N
         self.mat = np.zeros((N,N))
+        self.state_size = N*N
+        self.action_size = 4
         self.available_moves = None
 
         self.moves_str = {
@@ -76,6 +77,18 @@ class Grid(object):
     def get_ele(self, i, j):
         return self.mat[i, j]
 
+    def reset(self):
+        self.mat = np.zeros((self.N,self.N))
+        self.available_moves = None
+        self.next_arr = [None] * 4
+        self.add()
+        self.add()
+
+    def get_curr_state(self):
+        return self.mat.flatten()
+
+    def get_max_tile(self):
+        return self.mat.max()
 
     #########
     # Moves #
