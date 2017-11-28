@@ -10,6 +10,7 @@ import logging
 import time
 
 from DQNAgent import DQNAgent
+from DDQNAgent import DDQNAgent
 from grid import Grid
 
 
@@ -106,7 +107,7 @@ if __name__ == "__main__":
 
     EPISODES = 1000000
     SAVE_DIR = "./save/"
-    EXPERIMENT_NAME = "2048-dqn-sparse-{}-{}-{}".format(BATCH_SIZE, GAMMA, LR)
+    EXPERIMENT_NAME = "2048-ddqn-sparse-{}-{}-{}".format(BATCH_SIZE, GAMMA, LR)
     DNN_FILE = SAVE_DIR + EXPERIMENT_NAME + ".h5"
     LOG_FILE = SAVE_DIR + EXPERIMENT_NAME + ".log"
 
@@ -114,16 +115,15 @@ if __name__ == "__main__":
 
     # Initialize
     env = Grid(4)
-    agent = DQNAgent(env.state_size, env.action_size, GAMMA, LR)
+    agent = DDQNAgent(env.state_size, env.action_size, GAMMA, LR)
     if os.path.isfile(DNN_FILE):
         logger.info('loading file from {}'.format(DNN_FILE))
         agent.load(DNN_FILE)
     max_num_moves = 10000
-    batch_size = 32
     logger.info("gamma = {}, epsilon = {}, epsilon_min = {}, epsilon_decay = {}, learning_rate = {}"
                 .format(agent.gamma, agent.epsilon, agent.epsilon_min, agent.epsilon_decay, agent.learning_rate))
     logger.info("batch_size = {}, memory_size = {}, max_num_moves = {}"
-                .format(batch_size, agent.memory.maxlen, max_num_moves))
+                .format(BATCH_SIZE, agent.memory.maxlen, max_num_moves))
 
     overall_start_time = time.time()
     for e in range(EPISODES):
@@ -154,8 +154,8 @@ if __name__ == "__main__":
 
         t1 = time.time()
 
-        if len(agent.memory) > batch_size:
-            agent.replay(batch_size)
+        if len(agent.memory) > BATCH_SIZE:
+            agent.replay(BATCH_SIZE)
 
         t2 = time.time()
 

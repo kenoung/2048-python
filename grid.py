@@ -85,7 +85,7 @@ class Grid(object):
         self.add()
 
     def get_curr_state(self):
-        return self.mat.flatten()
+        return np.ma.log2(self.mat.flatten()).filled(0) / 10
 
     def get_max_tile(self):
         return self.mat.max()
