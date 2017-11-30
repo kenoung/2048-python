@@ -11,6 +11,11 @@ DOWN = 1
 LEFT = 2
 RIGHT = 3
 
+LOSE_PENALTY = "lp"
+MAX_MERGEABLE_TILES = "mmt"
+STANDARD_SCORE_WO_LOSE_PENALTY = "sswolp"
+STANDARD_SCORE_W_LOSE_PENALTY = "sswlp"
+
 class Grid(object):
     def __init__(self, N):
         """Initialize an N*N grid"""
@@ -33,6 +38,14 @@ class Grid(object):
             LEFT: self.left,
             RIGHT: self.right
         }
+
+        self.reward_funcs = {
+            LOSE_PENALTY: self.lose_penalty,
+            MAX_MERGEABLE_TILES: self.max_mergeable_tiles,
+            STANDARD_SCORE_WO_LOSE_PENALTY: self.standard_score_wo_lose_penalty,
+            STANDARD_SCORE_W_LOSE_PENALTY: self.standard_score_w_lose_penalty
+        }
+        self.reward_func = None
 
         self.next_arr = [None] * 4
 
@@ -89,6 +102,13 @@ class Grid(object):
 
     def get_max_tile(self):
         return self.mat.max()
+
+    def get_num_tiles(self, mat):
+        num_tiles = 0
+        for tile in mat.flatten():
+            if tile != 0:
+                num_tiles += 1
+        return num_tiles
 
     #########
     # Moves #
@@ -180,11 +200,55 @@ class Grid(object):
     def _rotate_right(self, mat):
         return mat[::-1].T
 
+    ############
+    ## REWARD ##
+    ############
+    def set_reward(self, reward_func_str):
+        self.reward_func =  self.reward_funcs[reward_func_str]
+
+    def lose_penalty(self, action):
+        if self.is_game_over():
+            return -1
+        elif self.is_win():
+            return 1
+        else:
+            return 0
+
+    def max_mergeable_tiles(self, action):
+        if self.is_game_over():
+            return 0
+        min_tiles = 16
+        for _, act in self.moves.items():
+            min_tiles = min(min_tiles, self.get_num_tiles(act(self.mat)))
+        return self.get_num_tiles(self.mat) - min_tiles
 
 
+    def standard_score_wo_lose_penalty(self, action):
+        return self.standard_score(action, 0)
 
+    def standard_score_w_lose_penalty(self, action):
+        return self.standard_score(action, -1000)
 
+    # Helper for standard score
+    def standard_score(self, action, penalty):
+        if self.is_game_over():
+            return penalty
+        score = 0
 
+        # todo IMPLEMENT SCORE in actions, and return it here
+        old_mat = self.mat.flatten()
+        new_mat = self.moves[action](self.mat).flatten()
 
+        old_mat_count = dict()
+        for tile in old_mat:
+            if tile not in old_mat_count:
+                old_mat_count[tile] = 0
+            old_mat_count[tile] += 1
 
+        for tile in new_mat:
+            if tile not in old_mat_count or old_mat_count[tile] == 0:
+                score += tile
+            else:
+                old_mat_count[tile] -= 1
 
+        return score

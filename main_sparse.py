@@ -11,7 +11,7 @@ import time
 
 from DQNAgent import DQNAgent
 from DDQNAgent import DDQNAgent
-from grid import Grid
+from grid import Grid, LOSE_PENALTY
 
 
 def init_logger():
@@ -33,12 +33,14 @@ def get_parameters():
     parser.add_argument('--gamma', type=float)
     parser.add_argument('--learning_rate', type=float)
     parser.add_argument('--batch_size', type=int)
+    parser.add_argument('--reward_func', type=str)
 
     return vars(parser.parse_args())
 
 
-def evaluate(agent, N, logger):
+def evaluate(agent, N, logger, reward_func_str):
     env = Grid(4)
+    env.set_reward(reward_func_str)
     max_tile_distribution = {}
     overall_sum_moves = 0
     overall_sum_q = 0
@@ -65,14 +67,13 @@ def evaluate(agent, N, logger):
         while not env.is_game_over():
             state = np.reshape(env.get_curr_state(), [1, env.state_size])
             action = agent.act_policy(state, env.get_available_moves())
+            reward = env.reward_func(action)
             env.play(action)
             env.add()
             moves += 1
 
             if env.is_game_over():
-                reward = 1 if env.is_win() else -1
-            else:
-                reward = 0
+                reward = env.reward_func(action)
 
             q = reward + agent.gamma * np.amax(agent.model.predict(np.reshape(env.get_curr_state(), [1, env.state_size]))[0])
             sum_q += q
@@ -106,6 +107,7 @@ if __name__ == "__main__":
     BATCH_SIZE = PARAMS['batch_size'] or 32
     GAMMA = PARAMS.get('gamma') or 0.95
     LR = PARAMS.get('learning_rate') or 0.001
+    REWARD_FUNC = PARAMS.get('reward_func') or LOSE_PENALTY
 
     EPISODES = 1000000
     SAVE_DIR = "./save/"
@@ -117,6 +119,7 @@ if __name__ == "__main__":
 
     # Initialize
     env = Grid(4)
+    env.set_reward(REWARD_FUNC)
     agent = DDQNAgent(env.state_size, env.action_size, GAMMA, LR)
     if os.path.isfile(DNN_FILE):
         logger.info('loading file from {}'.format(DNN_FILE))
@@ -134,21 +137,22 @@ if __name__ == "__main__":
 
         if e % 1000 == 0:
             agent.update_target_model()
-            evaluate(agent, 10, logger)
+            evaluate(agent, 10, logger, REWARD_FUNC)
             save_weights(agent, SAVE_DIR, DNN_FILE)
 
         t0 = time.time()
         for t in range(max_num_moves):
             action = agent.act(state, env.get_available_moves())
+            reward = env.reward_func(action)
             env.play(action)
             env.add()
             next_state = np.reshape(env.get_curr_state(), [1, env.state_size])
 
             if not env.is_game_over():
-                agent.remember(state, action, 0, next_state, env.is_game_over())
+                agent.remember(state, action, reward, next_state, env.is_game_over())
                 state = next_state
             else:
-                reward = 1 if env.is_win() else -1
+                reward = env.reward_func(action) # Get gameover reward
                 agent.remember(state, action, reward, next_state, env.is_game_over())
                 break
 
