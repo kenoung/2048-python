@@ -199,9 +199,11 @@ if __name__ == "__main__":
 
         t0 = time.time()
         for t in range(max_num_moves):
+            # tiles0 = env.get_num_tiles()
             action = agent.act(state, env.get_available_moves())
             reward = env.reward_func(action)
             env.play(action)
+            # tiles1 = env.get_num_tiles()
             env.add()
             next_state = np.reshape(env.get_curr_state(), [1, env.state_size])
 

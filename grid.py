@@ -89,6 +89,14 @@ class Grid(object):
 
         return available_moves
 
+    def get_num_tiles(self):
+        num_tiles = 0
+        for i in range(self.N):
+            for j in range(self.N):
+                if self.mat[i][j]:
+                    num_tiles += 1
+        return num_tiles
+
     def is_game_over(self):
         return len(self.get_available_moves()) == 0 or self.is_win()
 
