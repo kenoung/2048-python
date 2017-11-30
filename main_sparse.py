@@ -51,6 +51,8 @@ def evaluate(agent, N, logger):
                   [8, 128,  64, 16],
                   [8,  32,  16,  8],
                   [2,   8,   4,  2]]
+    state_first = np.ma.log2(np.array(state_first).flatten()).filled(0) / 10
+    state_last = np.ma.log2(np.array(state_last).flatten()).filled(0) / 10
 
     q_first = agent.gamma * np.amax(agent.model.predict(np.reshape(state_first, [1, env.state_size]))[0])
     q_last = agent.gamma * np.amax(agent.model.predict(np.reshape(state_last, [1, env.state_size]))[0])
@@ -130,10 +132,8 @@ if __name__ == "__main__":
         env.reset()
         state = np.reshape(env.get_curr_state(), [1, env.state_size])
 
-        if e % 100 == 0:
-            agent.update_target_model()
-
         if e % 1000 == 0:
+            agent.update_target_model()
             evaluate(agent, 10, logger)
             save_weights(agent, SAVE_DIR, DNN_FILE)
 
@@ -154,8 +154,9 @@ if __name__ == "__main__":
 
         t1 = time.time()
 
+        loss = None
         if len(agent.memory) > BATCH_SIZE:
-            agent.replay(BATCH_SIZE)
+            loss = agent.replay(BATCH_SIZE)
 
         t2 = time.time()
 
@@ -163,8 +164,8 @@ if __name__ == "__main__":
         training_time = t2-t1
         episode_time = t2-t0
 
-        logger.info("episode: {}/{}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}"
-                    .format(e, EPISODES, agent.epsilon, env.get_max_tile(), simulation_time, training_time, episode_time))
+        logger.info("episode: {}/{}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}, loss: {:.3}"
+                    .format(e, EPISODES, agent.epsilon, env.get_max_tile(), simulation_time, training_time, episode_time, loss))
 
 
     overall_time = time.time() - overall_start_time

@@ -4,7 +4,6 @@ import numpy as np
 
 from DQNAgent import DQNAgent
 
-
 class DDQNAgent(DQNAgent):
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
@@ -19,6 +18,10 @@ class DDQNAgent(DQNAgent):
             X_train.append(state.reshape(16,))
             y_train.append(target_f.reshape(4,))
 
+        loss = self.model.evaluate(np.array(X_train), np.array(y_train), batch_size=batch_size, verbose=0)
         self.model.fit(np.array(X_train), np.array(y_train), batch_size=batch_size, epochs=1, verbose=0)
+
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+
+        return loss
