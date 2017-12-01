@@ -1,11 +1,13 @@
 import random
 from collections import deque
 import numpy as np
-import time
 
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+
+DECAYING_EPSILON = "de"
+FIXED_VALUE_EPSILON = "fve"
 
 
 class DQNAgent:
@@ -14,12 +16,19 @@ class DQNAgent:
         self.action_size = action_size
         self.memory = deque(maxlen=1000)
         self.gamma = gamma    # discount rate
-        self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.999995
         self.learning_rate = lr
         self.model = self._build_model()
         self.target_model = self._build_model()
+
+        self.epsilon = 1.0  # exploration rate
+        self.epsilon_min = 0.01
+        self.epsilon_decay = 0.999995
+        self.epsilon_fixed = 0.1
+        self.epsilon_func = None
+        self.epsilon_map = {
+            DECAYING_EPSILON: self.decaying_epsilon,
+            FIXED_VALUE_EPSILON: self.fixed_value_epsilon,
+        }
 
     def update_target_model(self):
         self.target_model.set_weights(self.model.get_weights())
@@ -70,11 +79,26 @@ class DQNAgent:
             y_train.append(target_f.reshape(4,))
 
         self.model.fit(np.array(X_train), np.array(y_train), batch_size=batch_size, epochs=1, verbose=0)
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+        self.epsilon_func()
 
     def load(self, name):
         self.model.load_weights(name)
 
     def save(self, name):
         self.model.save_weights(name)
+
+
+    ##################
+    ## EPSILON FUNC ##
+    ##################
+
+    def set_epsilon(self, epsilon_func_str):
+        self.epsilon_func = self.epsilon_map[epsilon_func_str]
+        self.epsilon_func()
+
+    def decaying_epsilon(self):
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+
+    def fixed_value_epsilon(self):
+        self.epsilon = self.epsilon_fixed

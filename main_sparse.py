@@ -9,7 +9,7 @@ import logging
 
 import time
 
-from DQNAgent import DQNAgent
+from DQNAgent import DECAYING_EPSILON
 from DDQNAgent import DDQNAgent
 from grid import Grid, LOSE_PENALTY
 
@@ -34,6 +34,7 @@ def get_parameters():
     parser.add_argument('--learning_rate', type=float)
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--reward_func', type=str)
+    parser.add_argument('--epsilon_func', type=str)
 
     return vars(parser.parse_args())
 
@@ -108,10 +109,11 @@ if __name__ == "__main__":
     GAMMA = PARAMS.get('gamma') or 0.95
     LR = PARAMS.get('learning_rate') or 0.001
     REWARD_FUNC = PARAMS.get('reward_func') or LOSE_PENALTY
+    EPSILON_FUNC = PARAMS.get('epsilon_func') or DECAYING_EPSILON
 
     EPISODES = 1000000
     SAVE_DIR = "./save/"
-    EXPERIMENT_NAME = "2048-ddqn-sparse-{}-{}-{}".format(BATCH_SIZE, GAMMA, LR)
+    EXPERIMENT_NAME = "2048-ddqn-sparse-{}-{}-{}-{}-{}".format(BATCH_SIZE, GAMMA, LR, REWARD_FUNC, EPSILON_FUNC)
     DNN_FILE = SAVE_DIR + EXPERIMENT_NAME + ".h5"
     LOG_FILE = SAVE_DIR + EXPERIMENT_NAME + ".log"
 
@@ -121,15 +123,18 @@ if __name__ == "__main__":
     env = Grid(4)
     env.set_reward(REWARD_FUNC)
     agent = DDQNAgent(env.state_size, env.action_size, GAMMA, LR)
+    agent.set_epsilon(EPSILON_FUNC)
     if os.path.isfile(DNN_FILE):
         logger.info('loading file from {}'.format(DNN_FILE))
         agent.load(DNN_FILE)
     max_num_moves = 10000
     logger.info("gamma = {}, epsilon = {}, epsilon_min = {}, epsilon_decay = {}, learning_rate = {}"
                 .format(agent.gamma, agent.epsilon, agent.epsilon_min, agent.epsilon_decay, agent.learning_rate))
+    logger.info("reward_func = {}, epsilon_func = {}".format(REWARD_FUNC, EPSILON_FUNC))
     logger.info("batch_size = {}, memory_size = {}, max_num_moves = {}"
                 .format(BATCH_SIZE, agent.memory.maxlen, max_num_moves))
 
+    # Train
     overall_start_time = time.time()
     for e in range(EPISODES):
         env.reset()
