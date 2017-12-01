@@ -46,19 +46,70 @@ def evaluate(agent, N, logger, reward_func_str):
     overall_sum_moves = 0
     overall_sum_q = 0
 
-    state_first = [[ 0,  0,  0,  0],
-                 [ 0,  0,  0,  0],
-                 [ 2,  0,  2,  0],
-                 [ 0,  0,  0,  0]]
-    state_last = [[2,  32, 128,  2],
-                  [8, 128,  64, 16],
-                  [8,  32,  16,  8],
-                  [2,   8,   4,  2]]
-    state_first = np.ma.log2(np.array(state_first).flatten()).filled(0) / 10
-    state_last = np.ma.log2(np.array(state_last).flatten()).filled(0) / 10
+    state_first = [[0,  0,  0,  0],
+                   [0,  0,  0,  0],
+                   [2,  0,  2,  0],
+                   [0,  0,  0,  0]]
+    state_1 = [[2, 0, 4,   2],
+               [0, 0, 0,  16],
+               [0, 0, 8,  32],
+               [0, 4, 32, 16]]
+    state_2 = [[2,   2,  4,  2],
+               [8,  16,  0,  0],
+               [64, 32,  0,  4],
+               [64,  0,  0,  0]]
+    state_3 = [[2, 32, 128,  2],
+               [8, 128, 64, 16],
+               [8, 32,  16,  8],
+               [2,  8,   4,  2]]
+    state_4 = [[2,   32,  128,   2],
+               [8,  128,   64,  16],
+               [8,   32,   16,   8],
+               [2,    8,    4,   2]]
+    state_5 = [[4,  2,   16, 256],
+               [4,  8,   64,  32],
+               [0,  0,  128,   4],
+               [0,  0,  256,   8]]
+    state_6 = [[4, 4,  16, 256],
+               [2, 2, 512,  32],
+               [0, 8, 128,   4],
+               [0, 0,  16,   8]]
+    state_last = [[32,       0,    0,  0],
+                  [8,        2,    0,  0],
+                  [64,      16,    0,  16],
+                  [1024,  1024,    4,  4]]
+    state_after = [[8,  32,   512,  32],
+                   [8,  16,  1024,  16],
+                   [64,  0,     8,  512],
+                   [0,   0,     0,  2048]]
+    state_right = [[0, 0,  2, 32],
+                  [0, 0, 32, 16],
+                  [2, 0,  8, 64],
+                  [0, 0,  0, 0]]
+    state_up = [[32, 16, 64, 0],
+                [2, 32, 16, 0],
+                [0, 0, 0, 0],
+                [0, 0, 2, 0]]
+    state_left = [[0,   0, 0, 0],
+                  [64, 16, 0, 2],
+                  [16, 32, 0, 0],
+                  [32,  2, 0, 0]]
+    state_down = [[0, 2, 0, 0],
+                  [0, 0, 0, 0],
+                  [0, 16, 32, 2],
+                  [0, 64, 16, 32]]
+    states = [state_first, state_1, state_2, state_3, state_4, state_5, state_6, state_last, state_after, state_right, state_up, state_left, state_down]
+    states_names = ["state_first", "state_1", "state_2", "state_3", "state_4", "state_5", "state_6", "state_last", "state_after", "state_right", "state_up", "state_left", "state_down"]
+    states = list(map(lambda x: np.ma.log2(np.array(x).flatten()).filled(0) / 10, states))
 
-    q_first = agent.gamma * np.amax(agent.model.predict(np.reshape(state_first, [1, env.state_size]))[0])
-    q_last = agent.gamma * np.amax(agent.model.predict(np.reshape(state_last, [1, env.state_size]))[0])
+    results = {}
+    for i in range(len(states)):
+        state = states[i]
+        state_name = states_names[i]
+        q = agent.gamma * np.amax(agent.model.predict(np.reshape(state, [1, env.state_size]))[0])
+        action = env.moves[np.argmax(agent.model.predict(np.reshape(state, [1, env.state_size]))[0])].__name__
+        results[state_name] = {"q":q,"action":action}
+    logger.info(str(results))
 
     for i in range(N):
         env.reset()
@@ -90,8 +141,8 @@ def evaluate(agent, N, logger, reward_func_str):
         logger.info(
             "Playing at episode: {}, game num: {}, moves: {}, maxtile: {}, mean q value: {}"
                 .format(e, i + 1, moves, env.get_max_tile(), sum_q/moves))
-    logger.info("Performance at episode: {}, max tile distribution: {}, avg no of moves: {}, mean q value: {}, first q: {}, last q: {}"
-                .format(e, sorted(max_tile_distribution.items(), key=lambda x: x[0]), overall_sum_moves/N, overall_sum_q/overall_sum_moves, q_first, q_last))
+    logger.info("Performance at episode: {}, max tile distribution: {}, avg no of moves: {}, mean q value: {}"
+                .format(e, sorted(max_tile_distribution.items(), key=lambda x: x[0]), overall_sum_moves/N, overall_sum_q/overall_sum_moves))
 
 
 def save_weights(agent, save_dir, file_path):
