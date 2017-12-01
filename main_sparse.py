@@ -139,9 +139,9 @@ def evaluate(agent, N, logger, reward_func_str):
         overall_sum_q += sum_q
 
         logger.info(
-            "Playing at episode: {}, game num: {}, moves: {}, maxtile: {}, mean q value: {}"
+            "'Playing at episode': {}, 'game num': {}, 'moves': {}, 'maxtile': {}, 'mean q value': {}"
                 .format(e, i + 1, moves, env.get_max_tile(), sum_q/moves))
-    logger.info("Performance at episode: {}, max tile distribution: {}, avg no of moves: {}, mean q value: {}"
+    logger.info("'Performance at episode': {}, 'max tile distribution': '{}', 'avg no of moves': {}, 'mean q value': {}"
                 .format(e, sorted(max_tile_distribution.items(), key=lambda x: x[0]), overall_sum_moves/N, overall_sum_q/overall_sum_moves))
 
 
@@ -179,10 +179,10 @@ if __name__ == "__main__":
         logger.info('loading file from {}'.format(DNN_FILE))
         agent.load(DNN_FILE)
     max_num_moves = 10000
-    logger.info("gamma = {}, epsilon = {}, epsilon_min = {}, epsilon_decay = {}, learning_rate = {}"
+    logger.info("'gamma': {}, 'epsilon': {}, 'epsilon_min': {}, 'epsilon_decay': {}, 'learning_rate': {}"
                 .format(agent.gamma, agent.epsilon, agent.epsilon_min, agent.epsilon_decay, agent.learning_rate))
-    logger.info("reward_func = {}, epsilon_func = {}".format(REWARD_FUNC, EPSILON_FUNC))
-    logger.info("batch_size = {}, memory_size = {}, max_num_moves = {}"
+    logger.info("'reward_func': '{}', 'epsilon_func': '{}'".format(REWARD_FUNC, EPSILON_FUNC))
+    logger.info("'batch_size': {}, 'memory_size': {}, 'max_num_moves': {}"
                 .format(BATCH_SIZE, agent.memory.maxlen, max_num_moves))
 
     # Train
@@ -224,9 +224,9 @@ if __name__ == "__main__":
         training_time = t2-t1
         episode_time = t2-t0
 
-        logger.info("episode: {}/{}, e: {:.2}, maxtile: {}, sim_time: {:.3}, train_time: {:.3}, episode_time: {:.3}, loss: {:.3}"
-                    .format(e, EPISODES, agent.epsilon, env.get_max_tile(), simulation_time, training_time, episode_time, loss))
+        logger.info("'episode': {}, 'e': {:.6}, 'maxtile': {}, 'sim_time': {:.3}, 'train_time': {:.3}, 'episode_time': {:.3}, 'loss': {:.3}"
+                    .format(e, agent.epsilon, env.get_max_tile(), simulation_time, training_time, episode_time, loss))
 
 
     overall_time = time.time() - overall_start_time
-    logger.info("total time taken: {:.3}".format(overall_time))
+    logger.info("'total time taken': {:.3}".format(overall_time))
