@@ -1,4 +1,5 @@
 import logging
+from itertools import product
 
 import numpy as np
 
@@ -49,8 +50,14 @@ class Grid(object):
 
         self.next_arr = [None] * 4
 
-        with open('tmap.pickle', 'rb') as f:
-            self.tmap = pickle.load(f)
+        try:
+            with open('tmap.pickle', 'rb') as f:
+                self.tmap = pickle.load(f)
+
+            with open('smap.pickle', 'rb') as f:
+                self.smap = pickle.load(f)
+        except FileNotFoundError:
+            logging.error('missing transition and score maps')
 
     def add(self):
         empty_cells = np.argwhere(self.mat == 0)
@@ -169,21 +176,23 @@ class Grid(object):
         return np.fliplr(shifted_mat)
 
     def _left_single_row(self, arr):
-        try:
-            return self.tmap[tuple(arr)]
-        except KeyError:
-            logging.error('arr not found: {}'.format(arr))
-            return self._gen_left_single_row(arr)
+        return self.tmap[tuple(arr)]
+
+    def _left_single_row_score(self, arr):
+        return self.smap[tuple(arr)]
 
     def _gen_left_single_row(self, arr):
+        """Return row and score"""
         arr = [i for i in arr if i != 0]
         idx = 1
         new_arr = []
+        add_score = 0
         while idx <= len(arr):
             if idx == len(arr):
                 new_arr.append(arr[idx - 1])
                 idx += 1
             elif arr[idx] == arr[idx-1]:
+                add_score += arr[idx-1]*2
                 new_arr.append(arr[idx-1]*2)
                 idx += 2
             else:
@@ -192,7 +201,7 @@ class Grid(object):
 
         new_arr.extend([0] * (self.N - len(new_arr)))
 
-        return new_arr
+        return new_arr, add_score
 
     def _rotate_left(self, mat):
         return mat.T[::-1]
@@ -233,22 +242,35 @@ class Grid(object):
     def standard_score(self, action, penalty):
         if self.is_game_over():
             return penalty
-        score = 0
 
-        # todo IMPLEMENT SCORE in actions, and return it here
-        old_mat = self.mat.flatten()
-        new_mat = self.moves[action](self.mat).flatten()
+        if action == UP:
+            return np.sum(np.apply_along_axis(self._left_single_row_score, 0, self.mat))
 
-        old_mat_count = dict()
-        for tile in old_mat:
-            if tile not in old_mat_count:
-                old_mat_count[tile] = 0
-            old_mat_count[tile] += 1
+        elif action == DOWN:
+            rev_mat = np.flipud(self.mat)
+            return np.sum(np.apply_along_axis(self._left_single_row_score, 0, rev_mat))
 
-        for tile in new_mat:
-            if tile not in old_mat_count or old_mat_count[tile] == 0:
-                score += tile
-            else:
-                old_mat_count[tile] -= 1
+        elif action == LEFT:
+            return np.sum(np.apply_along_axis(self._left_single_row_score, 1, self.mat))
 
-        return score
+        elif action == RIGHT:
+            rev_mat = np.fliplr(self.mat)
+            return np.sum(np.apply_along_axis(self._left_single_row_score, 1, rev_mat))
+
+
+def make_map():
+    tmap = {}
+    smap = {}
+
+    g = Grid(4)
+    for input_arr in product([0] + [2 ** i for i in range(1, 12)], repeat=4):
+        tmap[input_arr], smap[input_arr] = g._gen_left_single_row(input_arr)
+
+    with open('tmap.pickle', 'wb') as f:
+        pickle.dump(tmap, f)
+
+    with open('smap.pickle', 'wb') as f:
+        pickle.dump(smap, f)
+
+if __name__ == '__main__':
+    make_map()
