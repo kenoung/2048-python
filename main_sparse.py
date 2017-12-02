@@ -161,7 +161,7 @@ if __name__ == "__main__":
     LR = PARAMS.get('learning_rate') or 0.001
     REWARD_FUNC = PARAMS.get('reward_func') or LOSE_PENALTY
     EPSILON_FUNC = PARAMS.get('epsilon_func') or DECAYING_EPSILON
-    FILTER_INVALID = PARAMS.get('filter_invalid') or False
+    FILTER_INVALID = PARAMS.get('filter_invalid') or True
 
     EPISODES = 1000000
     SAVE_DIR = "./save/"
