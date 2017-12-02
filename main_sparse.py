@@ -106,9 +106,8 @@ def evaluate(agent, N, logger, reward_func_str):
     for i in range(len(states)):
         state = states[i]
         state_name = states_names[i]
-        q = agent.gamma * np.amax(agent.model.predict(np.reshape(state, [1, env.state_size]))[0])
-        action = env.moves[np.argmax(agent.model.predict(np.reshape(state, [1, env.state_size]))[0])].__name__
-        results[state_name] = {"q":q,"action":action}
+        q = agent.gamma * agent.model.predict(np.reshape(state, [1, env.state_size]))[0]
+        results[state_name] = list(q)
     logger.info(str(results))
 
     for i in range(N):
