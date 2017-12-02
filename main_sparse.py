@@ -139,9 +139,9 @@ def evaluate(agent, N, logger, reward_func_str):
         overall_sum_q += sum_q
 
         logger.info(
-            "'Playing at episode': {}, 'game num': {}, 'moves': {}, 'maxtile': {}, 'mean q value': {}"
+            "{{'Playing at episode': {}, 'game num': {}, 'moves': {}, 'maxtile': {}, 'mean q value': {}}}"
                 .format(e, i + 1, moves, env.get_max_tile(), sum_q/moves))
-    logger.info("'Performance at episode': {}, 'max tile distribution': '{}', 'avg no of moves': {}, 'mean q value': {}"
+    logger.info("{{'Performance at episode': {}, 'max tile distribution': '{}', 'avg no of moves': {}, 'mean q value': {}}}"
                 .format(e, sorted(max_tile_distribution.items(), key=lambda x: x[0]), overall_sum_moves/N, overall_sum_q/overall_sum_moves))
 
 
@@ -224,7 +224,7 @@ if __name__ == "__main__":
         training_time = t2-t1
         episode_time = t2-t0
 
-        logger.info("'episode': {}, 'e': {:.6}, 'maxtile': {}, 'sim_time': {:.3}, 'train_time': {:.3}, 'episode_time': {:.3}, 'loss': {:.3}"
+        logger.info("{{'episode': {}, 'e': {:.6}, 'maxtile': {}, 'sim_time': {:.3}, 'train_time': {:.3}, 'episode_time': {:.3}, 'loss': {:.3}}}"
                     .format(e, agent.epsilon, env.get_max_tile(), simulation_time, training_time, episode_time, loss))
 
 
