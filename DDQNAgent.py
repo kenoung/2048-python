@@ -20,8 +20,6 @@ class DDQNAgent(DQNAgent):
 
         loss = self.model.evaluate(np.array(X_train), np.array(y_train), batch_size=batch_size, verbose=0)
         self.model.fit(np.array(X_train), np.array(y_train), batch_size=batch_size, epochs=1, verbose=0)
-
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+        self.epsilon_func()
 
         return loss
