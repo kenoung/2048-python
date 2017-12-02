@@ -132,9 +132,9 @@ class Grid(object):
         Plays the given move
         :param move_int: 0 - 3 (corresponds to 'UP', 'DOWN', 'LEFT', 'RIGHT')
         """
+        self.mat = self.moves[move](self.mat)
         self.next_arr = [None] * 4
         self.available_moves = None
-        self.mat = self.moves[move](self.mat)
 
     def up(self, mat):
         if self.next_arr[UP] is None:
