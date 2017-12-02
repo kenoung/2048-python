@@ -11,7 +11,7 @@ FIXED_VALUE_EPSILON = "fve"
 
 
 class DQNAgent:
-    def __init__(self, state_size, action_size, gamma=0.95, lr=0.01):
+    def __init__(self, state_size, action_size, gamma=0.95, lr=0.01, filter_invalid=False):
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=1000)
@@ -29,6 +29,7 @@ class DQNAgent:
             DECAYING_EPSILON: self.decaying_epsilon,
             FIXED_VALUE_EPSILON: self.fixed_value_epsilon,
         }
+        self.filter_invalid = filter_invalid
 
     def update_target_model(self):
         self.target_model.set_weights(self.model.get_weights())
@@ -43,8 +44,8 @@ class DQNAgent:
                       optimizer=Adam(lr=self.learning_rate, clipvalue=1))
         return model
 
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
+    def remember(self, state, action, reward, next_state, done, available_moves=[]):
+        self.memory.append((state, action, reward, next_state, done, available_moves))
 
     def act(self, state, legal_moves):
         if np.random.rand() <= self.epsilon:
@@ -68,10 +69,16 @@ class DQNAgent:
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
         X_train, y_train = [], []
-        for state, action, reward, next_state, done in minibatch:
+        for state, action, reward, next_state, done, legal_moves in minibatch:
             target = reward
             if not done:
-                target += self.gamma * np.amax(self.target_model.predict(next_state)[0])
+                next_q = self.target_model.predict(next_state)[0]
+                if self.filter_invalid:
+                    for move in range(self.action_size):
+                        if move not in legal_moves:
+                            next_q[move] = np.NINF
+
+                target += self.gamma * np.amax(next_q)
 
             target_f = self.model.predict(state)
             target_f[0][action] = target

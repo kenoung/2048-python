@@ -8,10 +8,16 @@ class DDQNAgent(DQNAgent):
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
         X_train, y_train = [], []
-        for state, action, reward, next_state, done in minibatch:
+        for state, action, reward, next_state, done, legal_moves in minibatch:
             target = reward
             if not done:
-                target += self.gamma * self.target_model.predict(next_state)[0][np.argmax(self.model.predict(next_state)[0])]
+                next_q = self.model.predict(next_state)[0]
+                if self.filter_invalid:
+                    for move in range(self.action_size):
+                        if move not in legal_moves:
+                            next_q[move] = np.NINF
+
+                target += self.gamma * self.target_model.predict(next_state)[0][np.argmax(next_q)]
 
             target_f = self.model.predict(state)
             target_f[0][action] = target

@@ -35,6 +35,7 @@ def get_parameters():
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--reward_func', type=str)
     parser.add_argument('--epsilon_func', type=str)
+    parser.add_argument('--filter_invalid', type=bool)
 
     return vars(parser.parse_args())
 
@@ -160,10 +161,11 @@ if __name__ == "__main__":
     LR = PARAMS.get('learning_rate') or 0.001
     REWARD_FUNC = PARAMS.get('reward_func') or LOSE_PENALTY
     EPSILON_FUNC = PARAMS.get('epsilon_func') or DECAYING_EPSILON
+    FILTER_INVALID = PARAMS.get('filter_invalid') or False
 
     EPISODES = 1000000
     SAVE_DIR = "./save/"
-    EXPERIMENT_NAME = "2048-ddqn-sparse-{}-{}-{}-{}-{}".format(BATCH_SIZE, GAMMA, LR, REWARD_FUNC, EPSILON_FUNC)
+    EXPERIMENT_NAME = "2048-ddqn-sparse-{}-{}-{}-{}-{}-{}".format(BATCH_SIZE, GAMMA, LR, REWARD_FUNC, EPSILON_FUNC, FILTER_INVALID)
     DNN_FILE = SAVE_DIR + EXPERIMENT_NAME + ".h5"
     LOG_FILE = SAVE_DIR + EXPERIMENT_NAME + ".log"
 
@@ -172,7 +174,7 @@ if __name__ == "__main__":
     # Initialize
     env = Grid(4)
     env.set_reward(REWARD_FUNC)
-    agent = DDQNAgent(env.state_size, env.action_size, GAMMA, LR)
+    agent = DDQNAgent(env.state_size, env.action_size, gamma=GAMMA, lr=LR, filter_invalid=FILTER_INVALID)
     agent.set_epsilon(EPSILON_FUNC)
     if os.path.isfile(DNN_FILE):
         logger.info('loading file from {}'.format(DNN_FILE))
@@ -180,7 +182,7 @@ if __name__ == "__main__":
     max_num_moves = 10000
     logger.info("'gamma': {}, 'epsilon': {}, 'epsilon_min': {}, 'epsilon_decay': {}, 'learning_rate': {}"
                 .format(agent.gamma, agent.epsilon, agent.epsilon_min, agent.epsilon_decay, agent.learning_rate))
-    logger.info("'reward_func': '{}', 'epsilon_func': '{}'".format(REWARD_FUNC, EPSILON_FUNC))
+    logger.info("'reward_func': '{}', 'epsilon_func': '{}', 'filter_invalid': {}".format(REWARD_FUNC, EPSILON_FUNC, agent.filter_invalid))
     logger.info("'batch_size': {}, 'memory_size': {}, 'max_num_moves': {}"
                 .format(BATCH_SIZE, agent.memory.maxlen, max_num_moves))
 
@@ -204,7 +206,7 @@ if __name__ == "__main__":
             next_state = np.reshape(env.get_curr_state(), [1, env.state_size])
 
             if not env.is_game_over():
-                agent.remember(state, action, reward, next_state, env.is_game_over())
+                agent.remember(state, action, reward, next_state, env.is_game_over(), env.get_available_moves())
                 state = next_state
             else:
                 reward = env.reward_func(action) # Get gameover reward
