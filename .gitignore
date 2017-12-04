@@ -3,5 +3,9 @@ __pycache__/
 .idea/
 .cache/
 save/
+result/
 
 *.pyc
+
+.DS_Store
+.ipynb_checkpoints/
