@@ -25,6 +25,7 @@ class Grid(object):
         self.state_size = N*N
         self.action_size = 4
         self.available_moves = None
+        self.winning_number = WINNING_NUMBER
 
         self.moves_str = {
             'UP': self.up,
@@ -89,10 +90,10 @@ class Grid(object):
         return available_moves
 
     def is_game_over(self):
-        return len(self.get_available_moves()) == 0
+        return len(self.get_available_moves()) == 0 or self.is_win()
 
     def is_win(self):
-        return WINNING_NUMBER in self.mat
+        return self.winning_number in self.mat
 
     def get_ele(self, i, j):
         return self.mat[i, j]
@@ -217,9 +218,7 @@ class Grid(object):
 
     def lose_penalty(self, action):
         if self.is_game_over():
-            return -1
-        elif self.is_win():
-            return 1
+            return 1 if self.is_win() else -1
         else:
             return 0
 
@@ -240,7 +239,7 @@ class Grid(object):
 
     # Helper for standard score
     def standard_score(self, action, penalty):
-        if self.is_game_over():
+        if self.is_game_over() and not self.is_win():
             return penalty
 
         if action == UP:
