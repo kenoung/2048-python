@@ -7,11 +7,27 @@ import sys
 from DDQNAgent import DDQNAgent
 from grid import Grid
 
+
+
+def init_logger():
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    logger = logging.getLogger(EXPERIMENT_NAME)
+    if not os.path.exists(SAVE_DIR):
+        os.makedirs(SAVE_DIR)
+    hdlr = logging.FileHandler(LOG_FILE)
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    hdlr.setFormatter(formatter)
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.INFO)
+    logger.info("\n\n Starting eval...")
+    return logger
+
 def eval_agent(agent, env, NO_OF_RUNS):
     max_tiles = {}
     scores = 0
     move_counts = 0
-    for _ in range(NO_OF_RUNS):
+    for i in range(NO_OF_RUNS):
+        print("episode: {}".format(i))
         env.reset()
         move_count = 0
         curr_score = 0
@@ -30,14 +46,19 @@ def eval_agent(agent, env, NO_OF_RUNS):
             max_tiles[max_tile] = 0
         max_tiles[max_tile] += 1
 
-    print("max tiles:", sorted(max_tiles.items()))
-    print("avg score:", scores/NO_OF_RUNS)
-    print("avg moves:", move_counts/NO_OF_RUNS)
+    logger.info("max tiles: {}".format(sorted(max_tiles.items())))
+    logger.info("avg score: {}".format(scores/NO_OF_RUNS))
+    logger.info("avg moves: {}".format(move_counts/NO_OF_RUNS))
 
 if __name__ == '__main__':
-    WEIGHTS_FILE = 'result/2048-ddqn-sparse-32-0.95-0.0001-lp-de-True.h5'
-    EXPERIMENT_NAME = WEIGHTS_FILE.split('/')[1]
-    NO_OF_RUNS = 100
+    WEIGHTS_FILE = 'result_ken/2048-ddqn-sparse-32-0.95-0.0001-lp-de-True.h5'
+    EXPERIMENT_NAME = WEIGHTS_FILE.split('/')[-1]
+    SAVE_DIR = "eval/"
+    LOG_FILE = SAVE_DIR + "eval.log"
+    NO_OF_RUNS = 1000
+
+    logger = init_logger()
+    logger.info("Experiment: {}".format(WEIGHTS_FILE))
 
     env = Grid(4)
     agent = DDQNAgent(env.state_size, env.action_size)
